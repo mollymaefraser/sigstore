@@ -16,7 +16,6 @@ jobs:
       - name: Create SBOM
         uses: anchore/sbom-action@v0
         with:
-          path: ./cmd/sigstore
           format: spdx-json
           output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
       - name: Scan SBOM
