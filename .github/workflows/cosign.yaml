@@ -43,13 +43,13 @@ jobs:
             username: ${{ secrets.DOCKERHUB_USERNAME }}
             password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - id: build-and-push
         uses: docker/build-push-action@v4
         with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+            context: .
+            push: ${{ github.event_name }}
+            tags: ${{ steps.docker_meta.outputs.tags }}
+            labels: ${{ steps.docker_meta.outputs.labels }}
 
       - name: Sign the images with GitHub OIDC Token
         env:
