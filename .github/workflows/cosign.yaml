@@ -1,12 +1,6 @@
-name: cosign
+name: build and sign
 
 on: [push]
-
-env:
-  VERSION_MAJOR: 0
-  VERSION_MINOR: 1
-  VERSION_REV: $GITHUB_RUN_ID
-  CONTAINER_NAME: sigstore
 
 jobs:
   build-image:
@@ -15,7 +9,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-      id-token: write # needed for signing the images with GitHub OIDC Token
+      id-token: write 
 
     name: build-image
     steps:
@@ -24,7 +18,8 @@ jobs:
           fetch-depth: 1
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.6.0
+        uses: sigstore/cosign-installer@v3.1.1
+
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2.1.0
@@ -32,31 +27,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2.5.0
 
-      - id: docker_meta
-        uses: docker/metadata-action@v4.4.0
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2.1.0
         with:
-          images: sigstore/app
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - id: build-and-push
+      # publish dockerfile in the repo
+      - name: Publish Dockerfile
         uses: docker/build-push-action@v4
+        id: build-and-push
         with:
-            context: .
-            tags: ${{ steps.docker_meta.outputs.tags }}
-            labels: ${{ steps.docker_meta.outputs.labels }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
 
-      - name: Sign the images with GitHub OIDC Token
-        env:
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-          TAGS: ${{ steps.docker_meta.outputs.tags }}
+
+      - name: Sign image with a key
         run: |
-          images=""
-          for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
-          done
-          cosign sign --yes ${images}
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY  ghcr.io/${{ github.repository }}:latest
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
