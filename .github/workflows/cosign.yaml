@@ -1,0 +1,16 @@
+name: cosign
+
+on: [push]
+
+env:
+  VERSION_MAJOR: 0
+  VERSION_MINOR: 1
+  VERSION_REV: $GITHUB_RUN_ID
+  CONTAINER_NAME: sigstore
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+        - uses: sigstore/cosign-installer@main
