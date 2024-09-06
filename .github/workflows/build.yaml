@@ -1,0 +1,40 @@
+name: Build Go
+
+on: [push]
+
+env:
+  VERSION_MAJOR: 0
+  VERSION_MINOR: 1
+  VERSION_REV: $GITHUB_RUN_ID
+  CONTAINER_NAME: gamification-svc
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Display Go version
+        run: go version
+      - name: Install dependencies
+        run: make deps
+      - name: Build
+        run: |
+          make build \
+          VERSION_MAJOR=$VERSION_MAJOR \
+          VERSION_MINOR=$VERSION_MINOR \
+          VERSION_REV=$VERSION_REV \
+          BUILD_BRANCH=$CI_COMMIT_BRANCH \
+          BUILD_COMMIT=$CI_COMMIT_SHORT_SHA \
+          BUILD_CREATOR="GitHub Actions" \
+          BUILD_MACHINE="$CI_RUNNER_ID on $CI_RUNNER_EXECUTABLE_ARCH"
+      - name: Create SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./internal
+          format: spdx-json
+          output-file: "${{ github.event.repository.name }}-sbom.spdx.json"
+      - name: Scan SBOM
+        uses: anchore/scan-action@v3
+        with:
+          sbom: "${{ github.event.repository.name }}-sbom.spdx.json"
