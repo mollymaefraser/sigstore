@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.1.1
+        uses: sigstore/cosign-installer@latest
 
 
       - name: Set up QEMU
