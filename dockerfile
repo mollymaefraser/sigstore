@@ -4,4 +4,4 @@ RUN mkdir /app
 
 ADD ./cmd/sigstore /app
 
-CMD ["/app/sogstore]
+CMD ["/app/sigstore]
