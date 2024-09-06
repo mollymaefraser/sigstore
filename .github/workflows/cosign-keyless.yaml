@@ -30,9 +30,7 @@ jobs:
           echo "image_sha=$(docker inspect --format='{{index .RepoDigests 0}}' ttl.sh/${IMAGE_TAG}:1h)" >> $GITHUB_OUTPUT
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3.1.1
-        with:
-          cosign-release: 'v2.1.1'
+        uses: sigstore/cosign-installer@v3.6.0
 
       - name: Keyless signing of image
         run: |
