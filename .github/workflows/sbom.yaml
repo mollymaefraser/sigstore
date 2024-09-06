@@ -9,7 +9,7 @@ env:
   CONTAINER_NAME: sigstore
 
 jobs:
-  build:
+  sbom:
     runs-on: ubuntu-latest
 
     steps:
