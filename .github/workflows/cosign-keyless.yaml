@@ -1,0 +1,44 @@
+name: keyless signing container images
+on: push
+
+jobs:
+ build-sign-container-image:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: "checkout"
+        uses: actions/checkout@v3
+
+      - name: Generate uuid from shortened commit SHA
+        id: uuid
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Build and push
+        env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
+        run: |
+          docker build -t ttl.sh/${IMAGE_TAG}:1h .
+          docker push ttl.sh/${IMAGE_TAG}:1h
+
+      - name: Get image digest
+        env:
+          IMAGE_TAG: signed-test-${{ steps.uuid.outputs.sha_short }}
+        id: digest
+        run: |
+          echo "image_sha=$(docker inspect --format='{{index .RepoDigests 0}}' ttl.sh/${IMAGE_TAG}:1h)" >> $GITHUB_OUTPUT
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.1.1
+        with:
+          cosign-release: 'v2.1.1'
+
+      - name: Keyless signing of image
+        run: |
+          echo ${{ steps.digest.outputs.image_sha }}
+          cosign sign --yes --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digest.outputs.image_sha }}
+
+      - name: Verify the image signing
+        run: |
+          cosign verify  --rekor-url "https://rekor.sigstore.dev/" ${{ steps.digest.outputs.image_sha }} --certificate-identity "https://github.com/mollymaefraser/sigstore/.github/workflows/cosign-keyless.yaml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" | jq .
