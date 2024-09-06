@@ -2,6 +2,6 @@ FROM alpine:3.14
 
 RUN mkdir /app
 
-ADD ./sigstore /app
+ADD ./cmd/sigstore /app
 
-CMD ["/app/sigstore"]
+CMD ["/app/sogstore]
